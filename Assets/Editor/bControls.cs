@@ -35,6 +35,7 @@ public class bControls : MonoBehaviour {
                 selectedObj.position = new Vector3(mousePos.x, mousePos.y, selectedObj.position.z) - offset;
             }
         }
+        
 	}
     
     void Grab(Vector2 mousePos, Vector2 selPos){
