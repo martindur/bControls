@@ -2,14 +2,17 @@
 using UnityEditor;
 using System.Collections;
 
-[CustomEditor(typeof(bControls))]
+[CustomEditor(typeof(GameObject))]
 public class bControlsEditor : Editor {
 
     Vector2 mousePos;
     Vector2 selXY;
 
     private bool isGrabbing = false;
-    private float offset;
+    private bool isGrabbingAxis = false;
+    private float zDepth;
+    private Vector3 curPos;
+    private Vector3 mouseOffset;
     
 	// Use this for initialization
 	public override void OnInspectorGUI(){
@@ -18,7 +21,11 @@ public class bControlsEditor : Editor {
 	
 	// Update is called once per frame
 	void OnSceneGUI () {
-        Debug.Log("Scene!");
+        mousePos = Event.current.mousePosition;
+        mousePos.y = Camera.current.pixelHeight - Event.current.mousePosition.y;
+        
+        if(Selection.activeTransform == null)
+            return;
         Transform selectedObj = Selection.activeTransform;
 
         if(Event.current.type == EventType.keyDown)
@@ -26,50 +33,55 @@ public class bControlsEditor : Editor {
                 if(Event.current.keyCode == (KeyCode.G))
                 {
                     isGrabbing = true;
-                    offset = Vector3.Distance(Camera.current.transform.position, selectedObj.position);
+                    zDepth = Vector3.Distance(Camera.current.transform.position, selectedObj.position);
+                    Tools.hidden = true;
+                    curPos = selectedObj.position;
+                    
                 }
         }
         
         if(isGrabbing){
-            test(selectedObj, offset);
+            Grab(selectedObj, zDepth);
+            if(Event.current.keyCode == (KeyCode.X)){
+                isGrabbing = false;
+                selectedObj.position = curPos;
+                isGrabbingAxis = true;
+            }
+        }
+        
+        if(isGrabbingAxis){
+            Grab(selectedObj, 0);
         }
         
         if(Event.current.type == EventType.MouseDown){
             if(Event.current.button == 0){
-                if(isGrabbing)
+                if(isGrabbing || isGrabbingAxis)
                 {
                     isGrabbing = false;
+                    Tools.hidden = false;
                 }
             }
         }
 	}
     
     
-    void test(Transform selectedObj, float offset){
-                float delay = Time.time;
-                Ray ray = Camera.current.ScreenPointToRay(new Vector3(Event.current.mousePosition.x, Camera.current.pixelHeight - Event.current.mousePosition.y, offset));
-                mousePos = Event.current.mousePosition;
-                selectedObj.position = ray.GetPoint(offset);
-
-        //Vector3 pos = cam.ScreenToWorldPoint(mousePos);
-        //selectedObj.position = new Vector3(pos.x, -pos.y, (cam.transform.position.z - selectedObj.position.z));
-        
-        //Debug.Log("Mouse world: " + pos);
-        //Debug.Log("Obj world: " + selectedObj.position);
-        
-
+    void Grab(Transform selectedObj, float zDepth){
+        Vector3 CurPosScreen = World2Screen(curPos);
+        CurPosScreen = new Vector3(mousePos.x, mousePos.y, 0f) - CurPosScreen;
+        float dist = CurPosScreen.magnitude;
+        CurPosScreen = CurPosScreen / dist;
+        Ray ray = Camera.current.ScreenPointToRay(new Vector3(CurPosScreen.x, CurPosScreen.y, zDepth));
+        Debug.Log(curPos);
+        //Debug.DrawRay(Camera.current.transform.position, ray.direction,Color.green, 10f);
+        selectedObj.position = ray.GetPoint(zDepth);
     }
-    void Grab(Transform selectedObj){
-        Vector3 screenPos = Camera.current.WorldToScreenPoint(selectedObj.position);
-        Vector3 mouse3 = new Vector3(mousePos.x, mousePos.y, 0f);
-        
-        while(Event.current.type != EventType.MouseDown && Event.current.button != 0)
-        {
-            Vector3 pos = World2Screen(selectedObj.position);
-            Vector2 offset = new Vector2(pos.x, pos.y) - mousePos;
-            pos = new Vector3(mousePos.x - offset.x, mousePos.x - offset.y, selectedObj.position.z);
-            selectedObj.position = pos;
-        }
+    
+    void Grab(Transform selectedObj, int id){
+        Vector3 mousePos = Event.current.mousePosition;
+        mousePos = View2World(mousePos);
+        float mouseY = mousePos.y;
+        selectedObj.transform.position = new Vector3(mouseY, selectedObj.position.y, selectedObj.position.z);
+        Debug.Log(mouseY);
     }
     
     Vector3 World2Screen(Vector3 world){ return Camera.current.WorldToScreenPoint(world);}
