@@ -12,7 +12,7 @@ public class bControlsEditor : Editor {
     private bool isGrabbingAxis = false;
     private float zDepth;
     private Vector3 curPos;
-    private Vector3 mouseOffset;
+    private Vector2 mouseOffset;
     
 	// Use this for initialization
 	public override void OnInspectorGUI(){
@@ -36,7 +36,8 @@ public class bControlsEditor : Editor {
                     zDepth = Vector3.Distance(Camera.current.transform.position, selectedObj.position);
                     Tools.hidden = true;
                     curPos = selectedObj.position;
-                    
+                    Vector2 CurPosScreen = World2Screen(curPos);
+                    mouseOffset = mousePos - CurPosScreen;
                 }
         }
         
@@ -66,12 +67,13 @@ public class bControlsEditor : Editor {
     
     
     void Grab(Transform selectedObj, float zDepth){
-        Vector3 CurPosScreen = World2Screen(curPos);
-        CurPosScreen = new Vector3(mousePos.x, mousePos.y, 0f) - CurPosScreen;
-        float dist = CurPosScreen.magnitude;
-        CurPosScreen = CurPosScreen / dist;
+        Vector2 CurPosScreen = mousePos - mouseOffset;
+        //float dist = CurPosScreen.magnitude;
+        //CurPosScreen = CurPosScreen / dist;
         Ray ray = Camera.current.ScreenPointToRay(new Vector3(CurPosScreen.x, CurPosScreen.y, zDepth));
-        Debug.Log(curPos);
+        Debug.Log("Mouse pos: " +mousePos);
+        Debug.Log("Obj Pos: " +CurPosScreen);
+        Debug.Log("Offset: " +mouseOffset);
         //Debug.DrawRay(Camera.current.transform.position, ray.direction,Color.green, 10f);
         selectedObj.position = ray.GetPoint(zDepth);
     }
