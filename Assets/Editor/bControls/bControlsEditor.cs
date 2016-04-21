@@ -10,22 +10,20 @@ public class bControlsEditor : Editor
     private bScale bscale;
     private bRotate brotate;
     
+    //Default object settings
+    Vector3 defaultScale;
+    Vector3 defaultPos;
+    Quaternion defaultRot;
+    
     Vector2 mousePos;
     Vector2 selXY;
-
-    private bool isGrabbing = false;
-    private bool isGrabbingAxis = false;
-    private float zDepth;
-    private Vector3 curPos;
+    //private Vector3 curPos;
     private Vector2 mouseOffset;
     private Transform selectedObj;
-
-    private int axisID = 0;
     
     //Scale settings
     private Vector3 initialDist;
     private float initMag;
-    private bool isScaling;
     
     public override void OnInspectorGUI()
     {
@@ -37,6 +35,8 @@ public class bControlsEditor : Editor
     
     void Awake(){
         bgrab = new bGrab(this);
+        bscale = new bScale(this);
+        brotate = new bRotate(this);
         myState = state.none;
     }
     
@@ -54,6 +54,13 @@ public class bControlsEditor : Editor
             bgrab.Grab(selectedObj);
             bgrab.CheckAxis(selectedObj);
         }
+        else if(myState == state.scale){
+            bscale.Scale(selectedObj);
+            bscale.CheckAxis(selectedObj);
+        }
+        else if(myState == state.rotate){
+            brotate.RotateFree(selectedObj);
+        }
 
         if (Event.current.type == EventType.MouseDown)
         {
@@ -70,28 +77,23 @@ public class bControlsEditor : Editor
 
     void CheckEvent(Transform selectedObj)
     {
-
+        
         if (Event.current.type == EventType.keyDown)
         {
+            defaultPos = selectedObj.position;
+            //defaultRot = selectedObj.rotation;
+            defaultScale = selectedObj.localScale;
             if (Event.current.keyCode == (KeyCode.G))
             {
                 bgrab.Init(selectedObj);
-                isGrabbing = true;
-                zDepth = GetZDepth(selectedObj.position);
-                Tools.hidden = true;
-                curPos = selectedObj.position;
-                Vector2 CurPosScreen = World2Screen(curPos);
-                mouseOffset = mousePos - CurPosScreen;
             }
             if (Event.current.keyCode == (KeyCode.S))
             {
-                isScaling = true;
-                zDepth = GetZDepth(selectedObj.position);
-                Tools.hidden = true;
-                curPos = selectedObj.position;
-                Vector2 CurPosScreen = World2Screen(curPos);
-                mouseOffset = CurPosScreen;
-                //InitScale();
+                bscale.Init(selectedObj);
+            }
+            if(Event.current.keyCode == (KeyCode.R))
+            {
+                brotate.Init(selectedObj);
             }
         }
     }
@@ -99,9 +101,9 @@ public class bControlsEditor : Editor
 
     //Space transformations
     public Vector3 World2Screen(Vector3 world) { return Camera.current.WorldToScreenPoint(world); }
-    Vector3 Screen2World(Vector3 screen) { return Camera.current.ScreenToWorldPoint(screen); }
-    Vector3 Screen2View(Vector3 screen) { return Camera.current.ScreenToViewportPoint(screen); }
-    Vector3 View2World(Vector3 view) { return Camera.current.ViewportToWorldPoint(view); }
+    public Vector3 Screen2World(Vector3 screen) { return Camera.current.ScreenToWorldPoint(screen); }
+    public Vector3 Screen2View(Vector3 screen) { return Camera.current.ScreenToViewportPoint(screen); }
+    public Vector3 View2World(Vector3 view) { return Camera.current.ViewportToWorldPoint(view); }
 
     //Positions
     public Vector2 GetMousePos() { return new Vector2(Event.current.mousePosition.x, Camera.current.pixelHeight - Event.current.mousePosition.y); }

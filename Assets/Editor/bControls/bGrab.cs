@@ -12,12 +12,9 @@ public class bGrab : Editor {
     Vector3 curPos;
     Vector2 mouseOffset;
 
-    void Awake(){
+    public bGrab(bControlsEditor controls){this.controls = controls;}
+        void Awake(){
         axis = new AxisControl();
-    }
-
-    public bGrab(bControlsEditor controls){
-        this.controls = controls;
     }
     
     
@@ -28,6 +25,7 @@ public class bGrab : Editor {
         Vector2 curPosScreen = controls.World2Screen(curPos);
         mouseOffset = controls.GetMousePos() - curPosScreen;
         axisOn = false;
+        Tools.hidden = true;
     }
     
     public void Grab(Transform selectedObj){
